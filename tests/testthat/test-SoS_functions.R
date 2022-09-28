@@ -26,5 +26,10 @@ test_that("Check topics for english and swedish",{
   expect_equal((names(topicsen)), c("namn","text"))
 })
 
+vars_obj <- return_meta(type="var", lang="en", topic="diagnoserislutenvard")
+vars <- contentToDataframe_meta(vars_obj)
+varsndf <- vars[,1:2]
 
-
+test_that("Check variables, Select inpatient topic (diagnoserislutenvard)",{
+  expect_equal(as.list(varsndf[,2]), list("Region", "Age", "Sex","Measure", "Year", "Diagnos"))
+})
