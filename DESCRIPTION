@@ -1,15 +1,16 @@
-Package: InpatientDiagnosisSdb
-Title: What the Package Does (One Line, Title Case)
+Package: HealthWelfareStatDB
+Title: R client for Swedish National Board of Health and Welfare Statistical Database API
 Version: 0.0.0.9000
 Authors@R: c(
     person("Alan", "Cacique Tamariz", email="alaca734@student-liu.se", role = "cre"),
     person("Kerstin", "Nilsson", email="kerni714@student.liu.se", role = "aut"))
-Description: What the package does (one paragraph).
+Description: Allows the user to query the Swedish National Board of Health and 
+             Welfare Statistical Database API for metadata and data.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.1
-Imports: stats, ggplot2
+Imports: httr,jsonlite,utils,stringr
 Suggests: 
     knitr,
     rmarkdown,
