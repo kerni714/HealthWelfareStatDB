@@ -19,7 +19,7 @@ set_userAgent <- function() {
 }
 
 #- Requests to API
-SoS_api <- function(version, lang, topic, resultquery) {
+hwdb_api <- function(version, lang, topic, resultquery) {
   
   #- Construct path
   path <- paste0("/",version,"/",lang,"/",topic, "/",resultquery)
@@ -55,7 +55,7 @@ SoS_api <- function(version, lang, topic, resultquery) {
       path = path,
       response = resp
     ),
-    class = "SoS_api"
+    class = "hwdb_api"
   )
 }
 
@@ -68,8 +68,8 @@ update_url <- function (base, path) {
 #- User functions
 #------------------------------------------------------------------------------#
 
-#- Print function for SoS_api object
-print.SoS_api <- function(x, ...) {
+#- Print function for hwdb_api object
+print.hwdb_api <- function(x, ...) {
   cat("<SoS ", x$path, ">\n", sep = "")
   utils::str(x$content)
   invisible(x)
@@ -140,7 +140,7 @@ return_meta <- function(type,lang,topic,var) {
   }
   
   #- Make call to API
-  resp_object <- SoS_api(version=version,lang=lang, topic = topic, 
+  resp_object <- hwdb_api(version=version,lang=lang, topic = topic, 
                          resultquery = resultquery)
 }
 
@@ -216,7 +216,7 @@ return_data <- function (lang,topic,df_input_vars) {
   }
   #- Obtain version
   version <- set_Rpkg_apiVersion()
-  resp_object <- SoS_api(version=version,lang=lang, topic = topic,
+  resp_object <- hwdb_api(version=version,lang=lang, topic = topic,
                          resultquery = resultquery)
   
   #- Put response object in list for output
@@ -228,7 +228,7 @@ return_data <- function (lang,topic,df_input_vars) {
     i <- 2
     while (i <= pages) {
       resultquery_i <- paste0(resultquery,"?sida=",i)
-      resp_object <- SoS_api(version, lang, topic, resultquery)
+      resp_object <- hwdb_api(version, lang, topic, resultquery)
       resp_object_list[[i]] <- resp_object
       i <- i +1
     }
@@ -239,7 +239,7 @@ return_data <- function (lang,topic,df_input_vars) {
 #- Converts meta data list content to data frame
 contentToDataframe_meta <- function(resp_object) {
   #- Check input
-  stopifnot(class(resp_object)=="SoS_api")
+  stopifnot(class(resp_object)=="hwdb_api")
   df <- do.call(rbind.data.frame, resp_object[[1]])
 }
 
@@ -254,7 +254,7 @@ contentToDataframe_data <- function(resp_object_list) {
     resp_object_i = resp_object_list[[i]]
     
     #- Check input
-    stopifnot(class(resp_object_i)=="SoS_api")
+    stopifnot(class(resp_object_i)=="hwdb_api")
     
     df_i <- do.call(rbind.data.frame, resp_object_i[[1]][[1]])
     if (i==1) {
