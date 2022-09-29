@@ -61,7 +61,7 @@ hwdb_api <- function(version, lang, topic, resultquery) {
   #- Construct url
   url <- update_url("https://sdb.socialstyrelsen.se/api", path = path)
   url <- stringr::str_replace_all(url, "//+", "/")
-  
+  #print(url)
   #- Send request to server
   resp <- httr::GET(url,set_userAgent())
   
@@ -70,7 +70,16 @@ hwdb_api <- function(version, lang, topic, resultquery) {
     part1 <- "Socialstyrelsen Statistical Database API request failed with server message: "
     part2 <- "Url: "
     part3 <- "API documentation: "
-    err_msg <- paste0(part1, httr::status_code(resp), "\n", part2, url, "\n", part3, get_apiDoc_url())
+    #- Check if more than one measure (matt) in query
+    matt_ind <- unlist(gregexpr('matt', url))[1]
+    next_str <- substr(url, matt_ind+5, 1000)
+    fsl_ind <- unlist(gregexpr('/', next_str))[1]
+    if (fsl_ind > 2) {
+      part4 <- "It appears that more than one measure (matt) has been queried, which is not allowed by the API"  
+    }
+    
+    err_msg <- paste0(part1, httr::status_code(resp), "\n", part2, url, "\n", part3, get_apiDoc_url(),
+                      "\n", part4)
     stop(err_msg, call. = FALSE)
   }
   #- Check for json output
@@ -196,6 +205,19 @@ contentToDataframe_data <- function(resp_object_list, addText) {
 #' examples see function return_data
 addTextToData <- function(df, lang, topic){
   
+  #- Check of input: df
+  stopifnot(is.data.frame(df))
+  
+  #- Check of input: lang
+  languages <- return_meta(type="lang")
+  langs <- languages[,1]
+  stopifnot(lang %in% langs)
+  
+  #- Check of input: topic
+  topics <- return_meta(type="topic", lang=lang)
+  topics <- topics[,1]
+  stopifnot(topic %in% topics)
+  
   #- Extract variables
   vars <- return_meta(type="var", lang=lang, topic=topic)
   
@@ -305,9 +327,10 @@ return_meta <- function(type,lang,topic,var) {
       #- Check input for correct value of input variables lang and topic
       languages <- return_meta(type="lang")
       langs <- languages[,1]
+      stopifnot(lang %in% langs)
       topics <- return_meta(type="topic", lang=lang)
       topics <- topics[,1]
-      stopifnot(lang %in% langs,topic %in% topics)
+      stopifnot(topic %in% topics)
       
       resultquery <- ""
     }
@@ -316,11 +339,13 @@ return_meta <- function(type,lang,topic,var) {
       # variable
       languages <- return_meta(type="lang")
       langs <- languages[,1]
+      stopifnot(lang %in% langs)
       topics <- return_meta(type="topic", lang=lang)
       topics <- topics[,1]
+      stopifnot(topic %in% topics)
       vars <- return_meta(type="var", lang=lang, topic=topic)
       vars <- vars[,1]
-      stopifnot(lang %in% langs,topic %in% topics, var %in% vars)
+      stopifnot(var %in% vars)
       
       resultquery <- var
     }
@@ -354,8 +379,9 @@ return_meta <- function(type,lang,topic,var) {
 #' @examples
 #' vars <- return_meta(type="var", lang="en", topic="diagnoserislutenvard")
 #' var_list <- vars[,1]
-#' #- Region=entire Sweden, age group=, sex= males and females, measure=,
-#' #  years = 2012, 2013, diagnoses=J13 & J14
+#' #- Region=entire Sweden, age group=, sex= males and females, measure=
+#' # Number of patients per 100,000 inhabitants years = 2012 and 2013, 
+#' # diagnoses= J13 and J14
 #' values_list <- c("0",
 #'                  "45-49",
 #'                  "1,2",
