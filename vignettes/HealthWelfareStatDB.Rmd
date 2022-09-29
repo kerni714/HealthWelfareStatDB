@@ -114,8 +114,8 @@ print(df_input_vars)
 
 ```
 
-Send query for the data. The option ```addText=TRUE ``` enables variables with text labels 
-to the variables to be added to as ordered factor variables. 
+Send query for the data. The option ```addText=TRUE ``` enables variables with 
+text labels to the id variables to be added as ordered factor variables. 
 ```{r}
 data <- return_data(lang="en",topic="diagnoserislutenvard", df_input_vars, addText=TRUE)
 print(data)

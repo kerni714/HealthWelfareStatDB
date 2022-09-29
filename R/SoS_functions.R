@@ -244,6 +244,8 @@ addTextToData <- function(df, lang, topic){
       nd[ind_tmp] <- nameId
       names(df) <- nd
       #- Make text variable as ordered factor
+      #- Sort var_cats by id
+      var_cats <- var_cats[order(var_cats$id),]
       df[,"text"] <- factor(df[,"text"], ordered = TRUE, levels = var_cats[,"text"])
       nd <- names(df)
       nd[length(nd)] <- nameText
