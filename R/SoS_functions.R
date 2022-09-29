@@ -3,22 +3,56 @@
 #------------------------------------------------------------------------------#
 
 
-#- Return version of the API used in this R package
-set_Rpkg_apiVersion <- function(){
+#' get_Rpkg_apiVersion
+#' 
+#' Returns version of the API used in this R package
+#'
+#' @return string with version of API for which the package is 
+#'         developed
+#'
+#' examples 
+#' get_Rpkg_apiVersion()
+get_Rpkg_apiVersion <- function(){
   version_kod <- "v1"
 }
 
-#- Return path of documentation of API
-set_apiDoc_url <- function() {
+#' get_apiDoc_url
+#'
+#' Return path of documentation of API
+#'
+#' @return string with url to API documentation
+#'
+#' examples
+#' get_apiDoc_url()
+get_apiDoc_url <- function() {
   url_doc <- "https://sdb.socialstyrelsen.se/sdbapi.aspx"
 }
 
-#- Set user agent
+#' set_userAgent
+#'
+#' Set user agent
+#'
+#' @return
+#'
+#' examples
+#' set_userAgent()
 set_userAgent <- function() {
   ua <- httr::user_agent("https://github.com/kerni714/HealthWelfareStatDB")
 }
 
-#- Requests to API
+
+#' hwdb_api
+#' 
+#' Sends request to server
+#'
+#' @param version - API version
+#' @param lang - language
+#' @param topic - topic that should be queried
+#' @param resultquery - part of the query that is the remainder of topic
+#'
+#' @return server response S3 object of class "hwdb_api"
+#'
+#' examples
 hwdb_api <- function(version, lang, topic, resultquery) {
   
   #- Construct path
@@ -37,7 +71,7 @@ hwdb_api <- function(version, lang, topic, resultquery) {
     part1 <- "Socialstyrelsen Statistical Database API request failed with server message: "
     part2 <- "Url: "
     part3 <- "API documentation: "
-    err_msg <- paste0(part1, httr::status_code(resp), "\n", part2, url, "\n", part3, set_apiDoc_url())
+    err_msg <- paste0(part1, httr::status_code(resp), "\n", part2, url, "\n", part3, get_apiDoc_url())
     stop(err_msg, call. = FALSE)
   }
   #- Check for json output
@@ -75,8 +109,25 @@ print.hwdb_api <- function(x, ...) {
   invisible(x)
 }
 
-#- Returns API metadata
 
+#' return_meta
+#'
+#' Returns API metadata, lists all values
+#' 
+#' @param type type of metadata, should be one of: 
+#'             "api_version" for version of api
+#'             "lang" for language
+#'             "topic" of data
+#'             "var" for the variable
+#' @param lang language (depends on version)
+#' @param topic topic of data (depends on language)
+#' @param var   variable (depends on topic) 
+#'
+#' @return S3 object of type "hwdb_api"
+#' @export
+#'
+#' @examples
+#' 
 return_meta <- function(type,lang,topic,var) {
   #- Checks of input --------------------------------------#
   #- Construct vector of allowed inputs for variable type
@@ -92,7 +143,7 @@ return_meta <- function(type,lang,topic,var) {
     resultquery <- ""
   }
   else {
-    version <- set_Rpkg_apiVersion()
+    version <- get_Rpkg_apiVersion()
     if (type=="lang") {
       lang <- ""
       topic <- ""
@@ -100,8 +151,7 @@ return_meta <- function(type,lang,topic,var) {
     }
     if (type=="topic") {
       #- Check input for correct value of input variable lang
-      languages_obj <- return_meta(type="lang")
-      languages <- contentToDataframe_meta(languages_obj)
+      languages <- return_meta(type="lang")
       langs <- languages[,1]
       stopifnot(lang %in% langs)
       
@@ -111,11 +161,9 @@ return_meta <- function(type,lang,topic,var) {
     }  
     if (type=="var") {
       #- Check input for correct value of input variables lang and topic
-      languages_obj <- return_meta(type="lang")
-      languages <- contentToDataframe_meta(languages_obj)
+      languages <- return_meta(type="lang")
       langs <- languages[,1]
-      topics_obj <- return_meta(type="topic", lang=lang)
-      topics <- contentToDataframe_meta(topics_obj)
+      topics <- return_meta(type="topic", lang=lang)
       topics <- topics[,1]
       stopifnot(lang %in% langs,topic %in% topics)
       
@@ -124,14 +172,11 @@ return_meta <- function(type,lang,topic,var) {
     if (type=="var_cat") {
       #- Check input for correct value of input variables lang, topic and
       # variable
-      languages_obj <- return_meta(type="lang")
-      languages <- contentToDataframe_meta(languages_obj)
+      languages <- return_meta(type="lang")
       langs <- languages[,1]
-      topics_obj <- return_meta(type="topic", lang=lang)
-      topics <- contentToDataframe_meta(topics_obj)
+      topics <- return_meta(type="topic", lang=lang)
       topics <- topics[,1]
-      vars_obj <- return_meta(type="var", lang=lang, topic=topic)
-      vars <- contentToDataframe_meta(vars_obj)
+      vars <- return_meta(type="var", lang=lang, topic=topic)
       vars <- vars[,1]
       stopifnot(lang %in% langs,topic %in% topics, var %in% vars)
       
@@ -142,19 +187,37 @@ return_meta <- function(type,lang,topic,var) {
   #- Make call to API
   resp_object <- hwdb_api(version=version,lang=lang, topic = topic, 
                           resultquery = resultquery)
+  
+  df <- contentToDataframe_meta(resp_object)
 }
 
-#- Returns data
-return_data <- function (lang,topic,df_input_vars) {
+
+#' return_data
+#'
+#' Returns data from query
+#'
+#' @param lang language
+#' @param topic topic of data 
+#' @param df_input_vars data frame with two variables: var_list and values_list,
+#'                      for each of the variables available for the topic it
+#'                      should contain the values for which data is desired, see
+#'                      example below 
+#' @param addText logical indicating whether variables containing text labels 
+#'                should be added to the id variables, the former variables
+#'                will be returned as ordered factors
+#'
+#' @return XXX
+#' @export
+#'
+#' @examples
+return_data <- function (lang,topic,df_input_vars, addText) {
   #- Check input variable lang
-  languages_obj <- return_meta(type="lang")
-  languages <- contentToDataframe_meta(languages_obj)
+  languages <- return_meta(type="lang")
   langs <- languages[,1]
   stopifnot(lang %in% langs)
   
   #- Check input variable topic
-  topics_obj <- return_meta(type="topic", lang=lang)
-  topics <- contentToDataframe_meta(topics_obj)
+  topics <- return_meta(type="topic", lang=lang)
   topics <- topics[,1]
   stopifnot(topic %in% topics)
   
@@ -162,16 +225,16 @@ return_data <- function (lang,topic,df_input_vars) {
   stopifnot(is.data.frame(df_input_vars),length(df_input_vars) == 2,
             colnames(df_input_vars) == c("var_list","values_list"))
   
+  #- Check addText
+  stopifnot(addText %in% c(TRUE,FALSE))
   #- Check contents of df_input_vars:
   #- Check so that variables are as in the list for selected languange and
   #  topic
-  vars_obj <- return_meta(type="var", lang=lang, topic=topic)
-  vars <- contentToDataframe_meta(vars_obj)
+  vars <- return_meta(type="var", lang=lang, topic=topic)
   vars_lang_topic_char <- as.character(vars[1][,1])
   vars_input_char <- as.character(df_input_vars$var_list)
   comparison_var <- (vars_lang_topic_char %in% vars_input_char)
   
-  #if (all(comparison_var)!=TRUE) {
   if (!all(comparison_var)) {
     err_msg <- paste0("Need to include all variables in df$input_vars: ",
                       vars_lang_topic_char) 
@@ -196,8 +259,7 @@ return_data <- function (lang,topic,df_input_vars) {
     }
     
     #- Extract the possible values/categories for the variable i
-    var_cats_obj <- return_meta(type="var_cat", lang=lang, topic=topic, var=var)
-    var_cats<- contentToDataframe_meta(var_cats_obj)
+    var_cats <- return_meta(type="var_cat", lang=lang, topic=topic, var=var)
     
     #- Compare values in df_input_vars with values in the API
     comparison_val <- (value %in% var_cats[,1])
@@ -215,7 +277,7 @@ return_data <- function (lang,topic,df_input_vars) {
     resultquery <- paste0(resultquery,res_i)
   }
   #- Obtain version
-  version <- set_Rpkg_apiVersion()
+  version <- get_Rpkg_apiVersion()
   resp_object <- hwdb_api(version=version,lang=lang, topic = topic,
                           resultquery = resultquery)
   
@@ -233,7 +295,8 @@ return_data <- function (lang,topic,df_input_vars) {
       i <- i +1
     }
   }
-  return(resp_object_list)
+  
+  df <- contentToDataframe_data(resp_object_list, addText=addText)
 }    
 
 #- Converts meta data list content to data frame
@@ -271,7 +334,6 @@ contentToDataframe_data <- function(resp_object_list, addText) {
   
   if (addText==TRUE) {
     #- Extract path components (lang & topic)
-    #path_comp <- strsplit(resp_object_i[[1]]$path,"/")[[1]]
     path_comp <- strsplit(resp_object_i$path,"/")[[1]]
     lang <- path_comp[3]
     topic <-path_comp[4]
@@ -289,8 +351,7 @@ contentToDataframe_data <- function(resp_object_list, addText) {
 addTextToData <- function(df, lang, topic){
   
   #- Extract variables
-  vars_obj <- return_meta(type="var", lang=lang, topic=topic)
-  vars <- contentToDataframe_meta(vars_obj)
+  vars <- return_meta(type="var", lang=lang, topic=topic)
   
   #- Add text
   for (i in 1:length(vars[,1])) {
@@ -299,9 +360,7 @@ addTextToData <- function(df, lang, topic){
     if(var_i != "diagnos" & var_i != "ar") {
     #if(var_i != "ar") {
       #- Find variable categories
-      var_cats_obj <- return_meta(type="var_cat", lang=lang,topic=topic,
-                                  var=var_i)
-      var_cats<- contentToDataframe_meta(var_cats_obj)
+      var_cats <- return_meta(type="var_cat", lang=lang, topic=topic, var=var_i)
       #print(var_cats)
       nameId <- paste0(var_i,"Id")
       nameText <- paste0(var_i,"Text")
@@ -325,28 +384,5 @@ addTextToData <- function(df, lang, topic){
   }
   return(df)
 }
-
-# contentToDataframe_data <- function(resp_object_list) {
-#   
-#   #- Check first that input is a list
-#   stopifnot(is.list(resp_object_list))
-#   
-#   #- Loop over list objects to extract data
-#   for (i in 1:length(resp_object_list)) {
-#     resp_object_i = resp_object_list[[i]]
-#     
-#     #- Check input
-#     stopifnot(class(resp_object_i)=="hwdb_api")
-#     
-#     df_i <- do.call(rbind.data.frame, resp_object_i[[1]][[1]])
-#     if (i==1) {
-#       df <- df_i
-#     }
-#     else {
-#       df <- rbind(df,df_i)
-#     }
-#   }
-#   return(df)
-# }
 
 #- END OF FILE ----------------------------------------------------------------#
