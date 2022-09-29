@@ -71,6 +71,21 @@ test_that("Check data",{
   expect_equal(dim.data.frame(data), c(57,11))
 })
 
+test_that("Check data",{
+  vars <- return_meta(type="var", lang="en", topic="diagnoserislutenvard")
+  var_list <- vars[,1]
+  values_list <- c("0,3,4,5,6,7,8,9,10,12,13,14,17",
+                   "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18",
+                   "1,2,3",
+                   "1",
+                   "2017,2018,2019,2020,2021",
+                   "C50,J13,J14")
+  df_input_vars <- as.data.frame(cbind(var_list,values_list))
+  data <- return_data(lang="en",topic="diagnoserislutenvard", df_input_vars,addText=TRUE)
+
+  expect_equal(dim.data.frame(data), c(10000,11))
+})
+
 test_that("return_data() discovers erroneous value input, number", {
   vars <- return_meta(type="var", lang="en", topic="diagnoserislutenvard")
   var_list <- vars[,1]
@@ -89,6 +104,21 @@ test_that("return_data() discovers erroneous value input, number", {
 test_that("return_data() discovers erroneous value input, character", {
   vars<- return_meta(type="var", lang="en", topic="diagnoserislutenvard")
   var_list <- vars[,1]
+  values_list <- c("0",
+                   "10",
+                   "1",
+                   "1",
+                   "2012,2013",
+                   "V99")
+  df_input_vars <- as.data.frame(cbind(var_list,values_list))
+  #data_obj <- return_data(lang="en",topic="diagnoserislutenvard", df_input_vars)
+
+  expect_error(return_data(lang="en",topic="diagnoserislutenvard", df_input_vars))
+})
+
+test_that("return_data() discovers erroneous variable input", {
+  vars<- return_meta(type="var", lang="en", topic="diagnoserislutenvard")
+  var_list <- c("region", "allder", "kon", "matt", "ar", "diagnos")
   values_list <- c("0",
                    "10",
                    "1",
