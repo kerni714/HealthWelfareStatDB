@@ -20,7 +20,7 @@ hwdb_api(version, lang, topic, resultquery)
 }}
 
 \item{resultquery}{\itemize{
-\item part of the query that is the remainder of topic
+\item part of the query that is the remainder after topic
 }}
 }
 \value{

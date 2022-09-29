@@ -20,8 +20,25 @@ return_meta(type, lang, topic, var)
 \item{var}{variable (depends on topic)}
 }
 \value{
-S3 object of type "hwdb_api"
+dataframe with id and text variables, sometimes also additional
+variables
 }
 \description{
-Returns API metadata, lists all values
+Returns API metadata, lists all values for the queried parameter
+}
+\examples{
+
+versions <- return_meta(type="api_version")
+print(versions)
+
+languages <- return_meta(type="lang")
+print(languages)
+
+topics <- return_meta(type="topic", lang="en")
+print(topics)
+vars <- return_meta(type="var", lang="en", topic="diagnoserislutenvard")
+print(vars[,1:2])
+var_cats_alder <- return_meta(type="var_cat", lang="en", 
+                   topic="diagnoserislutenvard", var="alder")
+print(var_cats_alder)
 }

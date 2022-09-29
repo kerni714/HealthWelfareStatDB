@@ -40,7 +40,6 @@ set_userAgent <- function() {
   ua <- httr::user_agent("https://github.com/kerni714/HealthWelfareStatDB")
 }
 
-
 #' hwdb_api
 #' 
 #' Sends request to server
@@ -48,7 +47,7 @@ set_userAgent <- function() {
 #' @param version - API version
 #' @param lang - language
 #' @param topic - topic that should be queried
-#' @param resultquery - part of the query that is the remainder of topic
+#' @param resultquery - part of the query that is the remainder after topic
 #'
 #' @return server response S3 object of class "hwdb_api"
 #'
@@ -93,26 +92,152 @@ hwdb_api <- function(version, lang, topic, resultquery) {
   )
 }
 
-#- Modify url based on the additional path of the query
+#' update_url
+#' Modify url based on the additional path of the query
+#'
+#' @param base base url to the API 
+#' @param path API url path
+#'
+#' @return string with the complete url
+#'
+#' examples
 update_url <- function (base, path) {
   paste0(base,"/",path)
 }
 
-#------------------------------------------------------------------------------#
-#- User functions
-#------------------------------------------------------------------------------#
-
-#- Print function for hwdb_api object
+ 
+#' print
+#'
+#' Print function for hwdb_api object
+#'
+#' @param x object of type hwdb_api
+#' @param ... arguments to be passed to methods
+#'
+#' examples
 print.hwdb_api <- function(x, ...) {
   cat("<SoS ", x$path, ">\n", sep = "")
   utils::str(x$content)
   invisible(x)
 }
 
+#' contentToDataframe_meta
+#'
+#' Converts content of meta data S3 objects of class hwdb_api  to data frame
+#'
+#' @param resp_object S3 object of class hwdb_api
+#'
+#' @return dataframe
+#'
+#' examples: see function return_meta
+contentToDataframe_meta <- function(resp_object) {
+  #- Check input
+  stopifnot(class(resp_object)=="hwdb_api")
+  df <- do.call(rbind.data.frame, resp_object[[1]])
+}
+
+#' contentToDataframe_data
+#'
+#' Converts content of list of S3 objects of class hwdb_api  to data frame
+#' @param resp_object_list list of S3 objects of class hwdb_api
+#' @param addText logical indicating whether variables containing text labels 
+#'                should be added to the id variables, the former variables
+#'                will be returned as ordered factors   
+#'
+#' @return data frame
+#'
+#' examples see function return_data
+contentToDataframe_data <- function(resp_object_list, addText) {
+  
+  #- Check first that input is a list, and value of addText
+  # (class of list elements checked below)
+  stopifnot(is.list(resp_object_list), addText %in% c(TRUE,FALSE))
+  
+  #- Loop over list objects to extract data
+  for (i in 1:length(resp_object_list)) {
+    resp_object_i = resp_object_list[[i]]
+    
+    #- Check input
+    stopifnot(class(resp_object_i)=="hwdb_api")
+    
+    df_i <- do.call(rbind.data.frame, resp_object_i[[1]][[1]])
+    if (i==1) {
+      df <- df_i
+    }
+    else {
+      df <- rbind(df,df_i)
+    }
+  }
+  
+  #- If commas in the value variable, replace to dot
+  df[,"varde"] <- gsub(",", ".", gsub("\\.", "", df[,"varde"]))
+  
+  if (addText==TRUE) {
+    #- Extract path components (lang & topic)
+    path_comp <- strsplit(resp_object_i$path,"/")[[1]]
+    lang <- path_comp[3]
+    topic <-path_comp[4]
+    
+    df <- addTextToData(df=df, lang=lang, topic=topic)
+  }
+  else {
+    return(df)  
+  }
+}
+
+#' addTextToData
+#'
+#' Adds variables containing text labels to the id variables.
+#' @param df dataframe 
+#' @param lang language
+#' @param topic topic
+#'
+#' @return dataframe
+#'
+#' examples see function return_data
+addTextToData <- function(df, lang, topic){
+  
+  #- Extract variables
+  vars <- return_meta(type="var", lang=lang, topic=topic)
+  
+  #- Add text
+  for (i in 1:length(vars[,1])) {
+    var_i <- vars[i,1]
+    #print(var_i)
+    if(var_i != "diagnos" & var_i != "ar") {
+      #if(var_i != "ar") {
+      #- Find variable categories
+      var_cats <- return_meta(type="var_cat", lang=lang, topic=topic, var=var_i)
+      #print(var_cats)
+      nameId <- paste0(var_i,"Id")
+      nameText <- paste0(var_i,"Text")
+      #- Change name temporarily to enable left_join
+      nd <- names(df)
+      ind_tmp <- which(nd==nameId)
+      nd[ind_tmp] <- "tmp"
+      names(df) <- nd
+      #- Join dataset with text to dataset with id
+      df <- dplyr::left_join(df, var_cats[,c("id","text")], by = c("tmp"="id"))
+      #- Change name back
+      nd <- names(df)
+      nd[ind_tmp] <- nameId
+      names(df) <- nd
+      #- Make text variable as ordered factor
+      df[,"text"] <- factor(df[,"text"], ordered = TRUE, levels = var_cats[,"text"])
+      nd <- names(df)
+      nd[length(nd)] <- nameText
+      names(df) <- nd
+    }
+  }
+  return(df)
+}
+
+#------------------------------------------------------------------------------#
+#- User functions
+#------------------------------------------------------------------------------#
 
 #' return_meta
 #'
-#' Returns API metadata, lists all values
+#' Returns API metadata, lists all values for the queried parameter
 #' 
 #' @param type type of metadata, should be one of: 
 #'             "api_version" for version of api
@@ -123,11 +248,28 @@ print.hwdb_api <- function(x, ...) {
 #' @param topic topic of data (depends on language)
 #' @param var   variable (depends on topic) 
 #'
-#' @return S3 object of type "hwdb_api"
+#' @return dataframe with id and text variables, sometimes also additional 
+#'         variables
 #' @export
 #'
 #' @examples
 #' 
+#' versions <- return_meta(type="api_version")
+#' print(versions)
+#'
+#' languages <- return_meta(type="lang")
+#' print(languages)
+#'
+#' topics <- return_meta(type="topic", lang="en")
+#' print(topics)
+
+#' vars <- return_meta(type="var", lang="en", topic="diagnoserislutenvard")
+#' print(vars[,1:2])
+
+#' var_cats_alder <- return_meta(type="var_cat", lang="en", 
+#'                    topic="diagnoserislutenvard", var="alder")
+#' print(var_cats_alder)
+
 return_meta <- function(type,lang,topic,var) {
   #- Checks of input --------------------------------------#
   #- Construct vector of allowed inputs for variable type
@@ -206,10 +348,28 @@ return_meta <- function(type,lang,topic,var) {
 #'                should be added to the id variables, the former variables
 #'                will be returned as ordered factors
 #'
-#' @return XXX
+#' @return data frame
 #' @export
 #'
 #' @examples
+#' vars <- return_meta(type="var", lang="en", topic="diagnoserislutenvard")
+#' var_list <- vars[,1]
+#' #- Region=entire Sweden, age group=, sex= males and females, measure=,
+#' #  years = 2012, 2013, diagnoses=J13 & J14
+#' values_list <- c("0",
+#'                  "45-49",
+#'                  "1,2",
+#'                   "7",
+#'                   "2012,2013",
+#'                   "J13,J14")
+#'
+#' df_input_vars <- as.data.frame(cbind(var_list,values_list))
+#' print(df_input_vars)
+#'
+#' data <- return_data(lang="en",topic="diagnoserislutenvard", df_input_vars, 
+#' addText=TRUE)
+#'
+
 return_data <- function (lang,topic,df_input_vars, addText) {
   #- Check input variable lang
   languages <- return_meta(type="lang")
@@ -298,91 +458,5 @@ return_data <- function (lang,topic,df_input_vars, addText) {
   
   df <- contentToDataframe_data(resp_object_list, addText=addText)
 }    
-
-#- Converts meta data list content to data frame
-contentToDataframe_meta <- function(resp_object) {
-  #- Check input
-  stopifnot(class(resp_object)=="hwdb_api")
-  df <- do.call(rbind.data.frame, resp_object[[1]])
-}
-
-#- Converts data list content to data frame
-contentToDataframe_data <- function(resp_object_list, addText) {
-  
-  #- Check first that input is a list, and value of addText
-  # (class of list elements checked below)
-  stopifnot(is.list(resp_object_list), addText %in% c(TRUE,FALSE))
-  
-  #- Loop over list objects to extract data
-  for (i in 1:length(resp_object_list)) {
-    resp_object_i = resp_object_list[[i]]
-    
-    #- Check input
-    stopifnot(class(resp_object_i)=="hwdb_api")
-    
-    df_i <- do.call(rbind.data.frame, resp_object_i[[1]][[1]])
-    if (i==1) {
-      df <- df_i
-    }
-    else {
-      df <- rbind(df,df_i)
-    }
-  }
-  
-  #- If commas in the value variable, replace to dot
-  df[,"varde"] <- gsub(",", ".", gsub("\\.", "", df[,"varde"]))
-  
-  if (addText==TRUE) {
-    #- Extract path components (lang & topic)
-    path_comp <- strsplit(resp_object_i$path,"/")[[1]]
-    lang <- path_comp[3]
-    topic <-path_comp[4]
-    
-    df <- addTextToData(df=df, lang=lang, topic=topic)
-  }
-  else {
-    return(df)  
-  }
-}
-
-#- Adds text labels to the id values.
-#addText <- function(data_object){
-
-addTextToData <- function(df, lang, topic){
-  
-  #- Extract variables
-  vars <- return_meta(type="var", lang=lang, topic=topic)
-  
-  #- Add text
-  for (i in 1:length(vars[,1])) {
-    var_i <- vars[i,1]
-    #print(var_i)
-    if(var_i != "diagnos" & var_i != "ar") {
-    #if(var_i != "ar") {
-      #- Find variable categories
-      var_cats <- return_meta(type="var_cat", lang=lang, topic=topic, var=var_i)
-      #print(var_cats)
-      nameId <- paste0(var_i,"Id")
-      nameText <- paste0(var_i,"Text")
-      #- Change name temporarily to enable left_join
-      nd <- names(df)
-      ind_tmp <- which(nd==nameId)
-      nd[ind_tmp] <- "tmp"
-      names(df) <- nd
-      #- Join dataset with text to dataset with id
-      df <- dplyr::left_join(df, var_cats[,c("id","text")], by = c("tmp"="id"))
-      #- Change name back
-      nd <- names(df)
-      nd[ind_tmp] <- nameId
-      names(df) <- nd
-      #- Make text variable as ordered factor
-      df[,"text"] <- factor(df[,"text"], ordered = TRUE, levels = var_cats[,"text"])
-      nd <- names(df)
-      nd[length(nd)] <- nameText
-      names(df) <- nd
-    }
-  }
-  return(df)
-}
 
 #- END OF FILE ----------------------------------------------------------------#
