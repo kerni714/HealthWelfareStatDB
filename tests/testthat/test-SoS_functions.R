@@ -73,7 +73,7 @@ test_that("Check data",{
                    "C50,J13")
   df_input_vars <- as.data.frame(cbind(var_list,values_list))
   data_obj <- return_data(lang="en",topic="diagnoserislutenvard", df_input_vars)
-  data <- contentToDataframe_data(data_obj)
+  data <- contentToDataframe_data(data_obj, addText=FALSE)
 
   expect_equal(dim.data.frame(data), c(57,7))
 })

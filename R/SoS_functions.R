@@ -141,7 +141,7 @@ return_meta <- function(type,lang,topic,var) {
   
   #- Make call to API
   resp_object <- hwdb_api(version=version,lang=lang, topic = topic, 
-                         resultquery = resultquery)
+                          resultquery = resultquery)
 }
 
 #- Returns data
@@ -217,7 +217,7 @@ return_data <- function (lang,topic,df_input_vars) {
   #- Obtain version
   version <- set_Rpkg_apiVersion()
   resp_object <- hwdb_api(version=version,lang=lang, topic = topic,
-                         resultquery = resultquery)
+                          resultquery = resultquery)
   
   #- Put response object in list for output
   resp_object_list <- list(resp_object)
@@ -244,10 +244,11 @@ contentToDataframe_meta <- function(resp_object) {
 }
 
 #- Converts data list content to data frame
-contentToDataframe_data <- function(resp_object_list) {
+contentToDataframe_data <- function(resp_object_list, addText) {
   
-  #- Check first that input is a list
-  stopifnot(is.list(resp_object_list))
+  #- Check first that input is a list, and value of addText
+  # (class of list elements checked below)
+  stopifnot(is.list(resp_object_list), addText %in% c(TRUE,FALSE))
   
   #- Loop over list objects to extract data
   for (i in 1:length(resp_object_list)) {
@@ -264,7 +265,88 @@ contentToDataframe_data <- function(resp_object_list) {
       df <- rbind(df,df_i)
     }
   }
+  
+  #- If commas in the value variable, replace to dot
+  df[,"varde"] <- gsub(",", ".", gsub("\\.", "", df[,"varde"]))
+  
+  if (addText==TRUE) {
+    #- Extract path components (lang & topic)
+    #path_comp <- strsplit(resp_object_i[[1]]$path,"/")[[1]]
+    path_comp <- strsplit(resp_object_i$path,"/")[[1]]
+    lang <- path_comp[3]
+    topic <-path_comp[4]
+    
+    df <- addTextToData(df=df, lang=lang, topic=topic)
+  }
+  else {
+    return(df)  
+  }
+}
+
+#- Adds text labels to the id values.
+#addText <- function(data_object){
+
+addTextToData <- function(df, lang, topic){
+  
+  #- Extract variables
+  vars_obj <- return_meta(type="var", lang=lang, topic=topic)
+  vars <- contentToDataframe_meta(vars_obj)
+  
+  #- Add text
+  for (i in 1:length(vars[,1])) {
+    var_i <- vars[i,1]
+    #print(var_i)
+    if(var_i != "diagnos" & var_i != "ar") {
+    #if(var_i != "ar") {
+      #- Find variable categories
+      var_cats_obj <- return_meta(type="var_cat", lang=lang,topic=topic,
+                                  var=var_i)
+      var_cats<- contentToDataframe_meta(var_cats_obj)
+      #print(var_cats)
+      nameId <- paste0(var_i,"Id")
+      nameText <- paste0(var_i,"Text")
+      #- Change name temporarily to enable left_join
+      nd <- names(df)
+      ind_tmp <- which(nd==nameId)
+      nd[ind_tmp] <- "tmp"
+      names(df) <- nd
+      #- Join dataset with text to dataset with id
+      df <- dplyr::left_join(df, var_cats[,c("id","text")], by = c("tmp"="id"))
+      #- Change name back
+      nd <- names(df)
+      nd[ind_tmp] <- nameId
+      names(df) <- nd
+      #- Make text variable as ordered factor
+      df[,"text"] <- factor(df[,"text"], ordered = TRUE, levels = var_cats[,"text"])
+      nd <- names(df)
+      nd[length(nd)] <- nameText
+      names(df) <- nd
+    }
+  }
   return(df)
 }
+
+# contentToDataframe_data <- function(resp_object_list) {
+#   
+#   #- Check first that input is a list
+#   stopifnot(is.list(resp_object_list))
+#   
+#   #- Loop over list objects to extract data
+#   for (i in 1:length(resp_object_list)) {
+#     resp_object_i = resp_object_list[[i]]
+#     
+#     #- Check input
+#     stopifnot(class(resp_object_i)=="hwdb_api")
+#     
+#     df_i <- do.call(rbind.data.frame, resp_object_i[[1]][[1]])
+#     if (i==1) {
+#       df <- df_i
+#     }
+#     else {
+#       df <- rbind(df,df_i)
+#     }
+#   }
+#   return(df)
+# }
 
 #- END OF FILE ----------------------------------------------------------------#
