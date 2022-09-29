@@ -29,10 +29,11 @@ Returns data from query
 \examples{
 vars <- return_meta(type="var", lang="en", topic="diagnoserislutenvard")
 var_list <- vars[,1]
-#- Region=entire Sweden, age group=, sex= males and females, measure=,
-#  years = 2012, 2013, diagnoses=J13 & J14
+#- Region=entire Sweden, age group=45-49, sex= males and females, measure=
+# Number of patients per 100,000 inhabitants years = 2012 and 2013, 
+# diagnoses= J13 and J14
 values_list <- c("0",
-                 "45-49",
+                 "10",
                  "1,2",
                   "7",
                   "2012,2013",
