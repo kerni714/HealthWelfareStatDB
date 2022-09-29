@@ -119,9 +119,7 @@ server <- function(input, output) {
     #ggplot(data, aes(fill=var2, x=var1, y=as.numeric(varde))) +
     #  geom_bar(position="stack", stat="identity") + facet_wrap(~ var3)
 
-    namevar1 <- input$var1
-    namevar2 <- input$var2
-    namevar3 <- input$var3
+
 
     if(input$var1 == "ar"){namevar1 <- "Year"}
     else if(input$var1 == "konText"){namevar1 <- "Sex"}
@@ -133,7 +131,7 @@ server <- function(input, output) {
 
     ggplot(data, aes(fill=var2, x=var1, y=as.numeric(varde))) +
       geom_bar(position="stack", stat="identity") + facet_wrap(~ var3)+
-      xlab(namevar1) + ylab(namevar2) + labs(fill = namevar2)
+      xlab(namevar1) + ylab("Length of stay") + labs(fill = namevar2)
 
     #ggplot(df, aes(fill=in2, x=in1, y=as.numeric(varde))) +
     #  geom_bar(position="stack", stat="identity") + facet_wrap(~ in3)
