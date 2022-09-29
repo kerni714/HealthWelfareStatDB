@@ -17,3 +17,110 @@ knitr::opts_chunk$set(
 ```{r setup}
 library(HealthWelfareStatDB)
 ```
+
+The HealthWelfareStatDB package contains functions for connecting to the web API 
+for the Statistical Database at the Swedish National Board of Health and Welfare
+(Socialstyrelsen). The documentation for the API can be found 
+at: https://sdb.socialstyrelsen.se/sdbapi.aspx. This package has been developed 
+to work for version 1 of the API. 
+
+There is one function to retrieve information on the metadata (return_meta), 
+and one function to retrieve data (return_data). Both functions return data
+frames.
+
+The function return_meta can be used to query the metadata. This call lists 
+the available versions:
+```{r}
+versions <- return_meta(type="api_version")
+print(versions)
+
+```
+
+This call lists the languages available:
+```{r}
+languages <- return_meta(type="lang")
+print(languages)
+
+```
+
+For a selected language, one can view the topics:
+```{r}
+topics_en <- return_meta(type="topic", lang="en")
+print(topics_en)
+topics_sv <- return_meta(type="topic", lang="sv")
+print(topics_sv)
+```
+
+For a selected topic and language, view available variables:
+```{r}
+vars <- return_meta(type="var", lang="en", topic="diagnoserislutenvard")
+print(vars[,1:2])
+
+```
+
+View variable categories, for region:
+```{r}
+var_cats_region <- return_meta(type="var_cat", lang="en", 
+                            topic="diagnoserislutenvard", var="region")
+print(var_cats_region)
+
+```
+
+View the first 20 variable categories, for diagnosis. The values in the "kod" 
+columns are the ICD-10 codes (International Statistical Classification of 
+Diseases and Related Health Problems – Tenth Revision).
+```{r}
+var_cats_dia <- return_meta(type="var_cat", lang="en", 
+                            topic="diagnoserislutenvard", var="diagnos")
+names(var_cats_dia)
+print(var_cats_dia[1:20,1:3])
+
+```
+Data can be queried by entering desired values/categories for the variables, for
+a selected language and topic. First, obtain list of variables for the topic of 
+choice, here In-Patient Care Diagnoses (diagnoserislutenvard)
+```{r}
+vars <- return_meta(type="var", lang="en", topic="diagnoserislutenvard")
+var_list <- vars[,1]
+
+```
+
+Then construct the variable values list by entering the ids for the variable categories:
+```{r}
+#  Region: Entire Sweden and Kalmar
+#  Age group: 40-44,45-49
+#  Sex: Male and female
+#  Measure: Number of patients per 100,000 inhabitants
+#  Years: 2012 and 2013
+#  Diagnosis: J13 and J14 (pneumonia)
+values_list <- c("0,8",
+                "9,10",
+                "1,2",
+                "7",
+                "2012,2013",
+                "J13,J14")
+```
+
+Then construct the paired variable-variable category input dataframe
+
+```{r}
+df_input_vars <- as.data.frame(cbind(var_list,values_list))
+
+```
+
+Review the input:
+```{r}
+print(df_input_vars)
+
+```
+
+Send query for the data. The option ```addText=TRUE ``` enables variables with text labels 
+to the variables to be added to as ordered factor variables. 
+```{r}
+data <- return_data(lang="en",topic="diagnoserislutenvard", df_input_vars, addText=TRUE)
+print(data)
+```
+
+
+
+
