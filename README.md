@@ -27,5 +27,5 @@ You can install the development version of this package from
 
 ``` r
 # install.packages("devtools")
-devtools::install_github("https://github.com/kerni714/HealthWelfareStatDB")
+devtools::install_github("https://github.com/kerni714/HealthWelfareStatDB", build_vignettes = TRUE)
 ```
