@@ -3,18 +3,23 @@
 <!-- badges: end -->
 
 # HealtWelfareStatDB
-R client for the Statistical Database API at the Swedish National Board of 
+R client for the Statistical Database web API at the Swedish National Board of 
 Health and Welfare (Socialstyrelsen).
 
-The HealthWelfareStatDB package contains functions for connecting to the web API 
-for the Statistical Database at the Swedish National Board of Health and Welfare. 
-The documentation for the API can be found at: 
-https://sdb.socialstyrelsen.se/sdbapi.aspx. This package has been developed 
-to work for version 1 (v1) of the API.
+The Statistical Database at the Swedish National Board of Health and Welfare 
+contains information on health, utilization of care, social services and 
+personnel in health care. The statistical database makes it possible to produce 
+tables, diagrams and maps. For more information and documentation, see
+https://www.socialstyrelsen.se/statistik-och-data/statistik/statistikdatabasen.
+
+The HealthWelfareStatDB package contains functions for connecting to the 
+database web API and download data directly in R. The package has been developed
+to work for version 1 (v1) of the API. Documentation of the API can be found at https://sdb.socialstyrelsen.se/sdbapi.aspx. 
+
 
 **Note**: there seem to be a limitation in the API in that it cannot handle
 queries for multiple measure categories. For all other variables, it seems to
-be possible to query multiple categories in one query.
+be possible to query multiple categories in the same query.
 
 **Disclaimer**: the R code in this package has been written to be general and work
 for all parts of the API. However, formal testing has only been carried out for
