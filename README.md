@@ -2,7 +2,7 @@
 [![R-CMD-check](https://github.com/kerni714/InpatientDiagnosisSdb/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/kerni714/InpatientDiagnosisSdb/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
-# HealtWelfareStatDB
+# HealthWelfareStatDB
 R client for the Statistical Database web API at the Swedish National Board of 
 Health and Welfare (Socialstyrelsen).
 
@@ -12,8 +12,8 @@ personnel in health care. The database makes it possible to produce tables,
 diagrams and maps. For more information and documentation regarding the database, 
 see https://www.socialstyrelsen.se/statistik-och-data/statistik/statistikdatabasen.
 
-The HealthWelfareStatDB package contains functions for connecting to the 
-database web API and download data directly in R. The package has been developed
+The HealthWelfareStatDB package contains functions for connecting to the web API 
+of the database and download data directly in R. The package has been developed
 to work for version 1 (v1) of the API. Documentation of the API can be found at https://sdb.socialstyrelsen.se/sdbapi.aspx. 
 
 
