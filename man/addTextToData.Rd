@@ -19,5 +19,8 @@ dataframe
 examples see function return_data
 }
 \description{
-Adds variables containing text labels to the id variables.
+Adds variables containing text labels to the id variables. The former variables
+will be returned as ordered factors, except for diagnosis and
+year which is left to the user to handle. The ordering follows
+the value of the id variable.
 }

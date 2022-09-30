@@ -11,7 +11,9 @@ contentToDataframe_data(resp_object_list, addText)
 
 \item{addText}{logical indicating whether variables containing text labels
 should be added to the id variables, the former variables
-will be returned as ordered factors}
+will be returned as ordered factors, except for diagnosis and
+year which is left to the user to handle. The ordering follows the
+value of the id variable.}
 }
 \value{
 data frame

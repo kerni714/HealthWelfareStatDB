@@ -150,7 +150,9 @@ contentToDataframe_meta <- function(resp_object) {
 #' @param resp_object_list list of S3 objects of class hwdb_api
 #' @param addText logical indicating whether variables containing text labels 
 #'                should be added to the id variables, the former variables
-#'                will be returned as ordered factors   
+#'                will be returned as ordered factors, except for diagnosis and
+#'                year which is left to the user to handle. The ordering follows the
+#'                value of the id variable.  
 #'
 #' @return data frame
 #'
@@ -195,7 +197,10 @@ contentToDataframe_data <- function(resp_object_list, addText) {
 
 #' addTextToData
 #'
-#' Adds variables containing text labels to the id variables.
+#' Adds variables containing text labels to the id variables. The former variables
+#'                will be returned as ordered factors, except for diagnosis and
+#'                year which is left to the user to handle. The ordering follows
+#'                the value of the id variable.
 #' @param df dataframe 
 #' @param lang language
 #' @param topic topic
@@ -373,7 +378,9 @@ return_meta <- function(type,lang,topic,var) {
 #'                      example below 
 #' @param addText logical indicating whether variables containing text labels 
 #'                should be added to the id variables, the former variables
-#'                will be returned as ordered factors
+#'                will be returned as ordered factors except for diagnosis and year 
+#'                which is left to the user to handle. The ordering follows the
+#'                value of the id variable.
 #'
 #' @return data frame
 #' @export
@@ -410,22 +417,30 @@ return_data <- function (lang,topic,df_input_vars, addText) {
   stopifnot(topic %in% topics)
   
   #- Check structure of df_input_vars
+  nrows_vars_in_topic <- nrow(return_meta(type="var", lang=lang, topic=topic))
+  nrows_df_input_vars <- nrow(df_input_vars)
+  
   stopifnot(is.data.frame(df_input_vars),length(df_input_vars) == 2,
-            colnames(df_input_vars) == c("var_list","values_list"))
+            colnames(df_input_vars) == c("var_list","values_list"),
+            nrows_df_input_vars==nrows_vars_in_topic)
   
   #- Check addText
   stopifnot(addText %in% c(TRUE,FALSE))
   #- Check contents of df_input_vars:
-  #- Check so that variables are as in the list for selected languange and
+  #- Check so that variables are as in the list for selected language and
   #  topic
   vars <- return_meta(type="var", lang=lang, topic=topic)
   vars_lang_topic_char <- as.character(vars[1][,1])
   vars_input_char <- as.character(df_input_vars$var_list)
-  comparison_var <- (vars_lang_topic_char %in% vars_input_char)
+  comparison_var <- (vars_input_char %in% vars_lang_topic_char)
   
   if (!all(comparison_var)) {
-    err_msg <- paste0("Need to include all variables in df$input_vars: ",
-                      vars_lang_topic_char) 
+    var_str <- toString(vars_input_char[!(comparison_var)])
+    #vars_to_include_str <- gsub(","," ",toString(vars_lang_topic_char))
+    vars_to_include_str <- toString(vars_lang_topic_char)
+    err_msg <- paste0("Error in input df$input_vars: ", var_str, "\n",
+                      "The following variables should be included: ",
+                      vars_to_include_str) 
     stop(err_msg) 
   }
   
@@ -453,9 +468,12 @@ return_data <- function (lang,topic,df_input_vars, addText) {
     comparison_val <- (value %in% var_cats[,1])
     
     if (!all(comparison_val)) {
-      err_msg <- paste0("All values in df_input_vars$values_list for variable ", var, " are not in the value list (categories) for ", var)
+      value_str <- toString(value[!(comparison_val)])
+      err_msg <- paste0("All values in df_input_vars$values_list for variable ", var, " are not in the value list (categories): ", value_str)
       stop(err_msg)
     }
+    #- Add back in df_input_vars
+    df_input_vars[i,2] <- gsub(", ",",",toString(value))
   }
   
   #- Construct result query ---------------------------------#
