@@ -20,23 +20,22 @@ library(HealthWelfareStatDB)
 
 The HealthWelfareStatDB package is an R client for the Statistical Database web 
 API at the Swedish National Board of Health and Welfare (Socialstyrelsen). 
-This database contains information on health, utilization of care, social services 
-and personnel in health care. The statistical database makes it possible to produce 
-tables, diagrams and maps. For more information and documentation, see
-https://www.socialstyrelsen.se/statistik-och-data/statistik/statistikdatabasen.
+The database contains information on health, utilization of care, social services 
+and personnel in health care and  makes it possible to produce tables, diagrams 
+and maps. For more information and documentation regarding the database, see https://www.socialstyrelsen.se/statistik-och-data/statistik/statistikdatabasen.
 
-The package contains functions for connecting to the database web API and 
+This package contains functions for connecting to the web API of the database and 
 download data directly in R. The package has been developed to work for version 1 
 (v1) of the API. Documentation of the API can be found at 
 https://sdb.socialstyrelsen.se/sdbapi.aspx. 
 
 Note: there seem to be a limitation in the API in that it cannot handle
-queries for multiple measure categories. For all other variables, it seems to
-be possible to query multiple categories in the same query.
+queries for multiple measure categories/measures. For all other variables, 
+it seems to be possible to query multiple categories in the same query.
 
-There is one function to retrieve information on the metadata (return_meta), 
-and one function to retrieve data (return_data). Both functions return data
-frames.
+In the package, there is one function to retrieve information on the metadata 
+(return_meta), and one function to retrieve data (return_data). Both functions 
+return data frames.
 
 The function return_meta can be used to query the metadata. This call lists 
 the available versions:
